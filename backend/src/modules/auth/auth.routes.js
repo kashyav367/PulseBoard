@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken"
 const router = Router()
 
 // GOOGLE LOGIN
+
 router.get(
 
   "/google",
@@ -16,10 +17,15 @@ router.get(
     "google",
 
     {
+
       scope: [
+
         "profile",
+
         "email"
+
       ],
+
     }
 
   )
@@ -27,6 +33,7 @@ router.get(
 )
 
 // GOOGLE CALLBACK
+
 router.get(
 
   "/google/callback",
@@ -36,14 +43,19 @@ router.get(
     "google",
 
     {
+
       session: false,
+
     }
 
   ),
 
   async (
+
     req,
+
     res
+
   ) => {
 
     const token = jwt.sign(
@@ -67,7 +79,7 @@ router.get(
 
     res.redirect(
 
-      `http://localhost:5173/auth-success?token=${token}`
+      `https://pulse-board-ebon.vercel.app/auth-success?token=${token}`
 
     )
 
