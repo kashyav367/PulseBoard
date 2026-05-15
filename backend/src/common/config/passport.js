@@ -21,7 +21,7 @@ passport.use(
         process.env.GOOGLE_CLIENT_SECRET,
 
       callbackURL:
-        "/api/auth/google/callback",
+        "https://pulseboard-o4dg.onrender.com/api/auth/google/callback",
     },
 
     async (

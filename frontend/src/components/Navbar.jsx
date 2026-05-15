@@ -35,8 +35,8 @@ function Navbar() {
 
   const handleGoogleLogin = () => {
 
-    window.location.href =
-      "http://localhost:5000/api/auth/google"
+   window.location.href =
+"https://pulseboard-o4dg.onrender.com/api/auth/google"
 
   }
 
