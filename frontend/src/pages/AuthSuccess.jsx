@@ -1,23 +1,20 @@
 import { useEffect } from "react"
 
-import {
-  useNavigate,
-  useSearchParams
-}
-from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 function AuthSuccess() {
 
-  const navigate =
-    useNavigate()
-
-  const [searchParams] =
-    useSearchParams()
+  const navigate = useNavigate()
 
   useEffect(() => {
 
+    const params =
+      new URLSearchParams(
+        window.location.search
+      )
+
     const token =
-      searchParams.get("token")
+      params.get("token")
 
     if (token) {
 
@@ -26,31 +23,17 @@ function AuthSuccess() {
         token
       )
 
-      navigate(
-        "/dashboard"
-      )
+      navigate("/dashboard")
 
     } else {
 
-      navigate("/")
+      navigate("/login")
 
     }
 
   }, [])
 
-  return (
-
-    <div className="min-h-screen flex items-center justify-center bg-stone-50">
-
-      <h1 className="text-3xl font-bold text-orange-500">
-
-        Logging you in...
-
-      </h1>
-
-    </div>
-
-  )
+  return <h1>Logging in...</h1>
 
 }
 
