@@ -1,28 +1,78 @@
 import { Router } from "express"
 
-import { loginController, registerController } from "./auth.controller.js"
+import passport from "passport"
 
-import { loginValidator, registerValidator } from "./auth.validator.js"
-
-import validateMiddleware from "../../common/middleware/validateMiddleware.js"
-
-
+import jwt from "jsonwebtoken"
 
 const router = Router()
 
+// GOOGLE LOGIN
+router.get(
 
+  "/google",
 
-router.post(
+  passport.authenticate(
 
-    "/register",
+    "google",
 
-    validateMiddleware(registerValidator),
+    {
+      scope: [
+        "profile",
+        "email"
+      ],
+    }
 
-    registerController
+  )
 
 )
 
-router.post("/login",validateMiddleware(loginValidator), loginController )
+// GOOGLE CALLBACK
+router.get(
 
+  "/google/callback",
+
+  passport.authenticate(
+
+    "google",
+
+    {
+      session: false,
+    }
+
+  ),
+
+  async (
+    req,
+    res
+  ) => {
+
+    const token = jwt.sign(
+
+      {
+
+        email:
+          req.user.email,
+
+      },
+
+      process.env.JWT_SECRET,
+
+      {
+
+        expiresIn: "7d",
+
+      }
+
+    )
+
+    res.redirect(
+
+      `http://localhost:5173/auth-success?token=${token}`
+
+    )
+
+  }
+
+)
 
 export default router

@@ -21,17 +21,17 @@ export const createPollController = async (
 
 ) => {
 
+    console.log(req.body)
+
     try {
 
         const poll = await createPollService(
 
             req.body,
 
-            req.user.id
+            req.user?._id
 
         )
-
-
 
         return ApiResponse.send(
 
@@ -46,6 +46,8 @@ export const createPollController = async (
         )
 
     } catch (error) {
+
+        console.log(error)
 
         next(error)
 
@@ -67,11 +69,9 @@ export const getMyPollsController = async (
 
         const polls = await getMyPollsService(
 
-            req.user.id
+            null
 
-        )
-
-
+         )
 
         return ApiResponse.send(
 
@@ -86,6 +86,8 @@ export const getMyPollsController = async (
         )
 
     } catch (error) {
+
+        console.log(error)
 
         next(error)
 
@@ -111,8 +113,6 @@ export const getSinglePollController = async (
 
         )
 
-
-
         return ApiResponse.send(
 
             res,
@@ -127,51 +127,47 @@ export const getSinglePollController = async (
 
     } catch (error) {
 
+        console.log(error)
+
         next(error)
 
     }
 
 }
 
-export const publishPollController = async (
-
+export const publishPollController =
+  async (
     req,
-
     res,
-
     next
-
-) => {
+  ) => {
 
     try {
 
-        const poll = await publishPollService(
+      const poll =
+        await publishPollService(
 
-            req.params.id,
-
-            req.user.id
-
-        )
-
-
-
-        return ApiResponse.send(
-
-            res,
-
-            200,
-
-            "Poll published successfully",
-
-            poll
+          req.params.id
 
         )
 
+      return ApiResponse.send(
 
+        res,
+
+        200,
+
+        "Poll published successfully",
+
+        poll
+
+      )
 
     } catch (error) {
 
-        next(error)
+      console.log(error)
+
+      next(error)
 
     }
 
@@ -190,14 +186,11 @@ export const getPublishedResultController = async (
     try {
 
         const poll =
-
             await getPublishedResultService(
 
                 req.params.id
 
             )
-
-
 
         return ApiResponse.send(
 
@@ -211,9 +204,9 @@ export const getPublishedResultController = async (
 
         )
 
-
-
     } catch (error) {
+
+        console.log(error)
 
         next(error)
 

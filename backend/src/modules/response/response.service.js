@@ -4,7 +4,7 @@ import Poll from "../poll/poll.model.js"
 
 import ApiError from "../../common/utils/ApiError.js"
 
-
+import { io } from "../../../server.js"
 
 export const submitResponseService = async (
 
@@ -24,8 +24,6 @@ export const submitResponseService = async (
 
     )
 
-
-
     if (!poll) {
 
         throw ApiError.notFound(
@@ -35,8 +33,6 @@ export const submitResponseService = async (
         )
 
     }
-
-
 
     // CHECK EXPIRY
 
@@ -56,21 +52,88 @@ export const submitResponseService = async (
 
     }
 
+    // PREVENT MULTIPLE RESPONSES
 
+    if (userId) {
 
-    // SAVE RESPONSE
+        const existingResponse =
+            await Response.findOne({
 
-    const response = await Response.create({
+                poll: pollId,
 
-        poll: pollId,
+                user: userId
 
-        user: userId,
+            })
 
-        answers
+        if (existingResponse) {
+
+            throw ApiError.badRequest(
+
+                "You already submitted a response"
+
+            )
+
+        }
+
+    }
+
+    // UPDATE VOTES
+
+    answers.forEach((answer) => {
+
+        const question =
+            poll.questions[
+              answer.questionIndex
+            ]
+
+        if (!question) return
+
+        const option =
+            question.options.find(
+
+                (opt) =>
+
+                    opt.text ===
+                    answer.selectedOption
+
+            )
+
+        if (option) {
+
+            option.votes += 1
+
+        }
 
     })
 
+    // SAVE UPDATED POLL
 
+    await poll.save()
+
+    // LIVE SOCKET UPDATE
+
+    io.to(
+      pollId.toString()
+    ).emit(
+
+      "vote_updated",
+
+      poll
+
+    )
+
+    // SAVE RESPONSE
+
+    const response =
+        await Response.create({
+
+            poll: pollId,
+
+            user: userId,
+
+            answers
+
+        })
 
     return response
 

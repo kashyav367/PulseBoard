@@ -4,69 +4,84 @@ import authMiddleware from "../../common/middleware/authMiddleware.js"
 
 import validateMiddleware from "../../common/middleware/validateMiddleware.js"
 
-import { createPollController } from "./poll.controller.js"
+import {
+  createPollController,
+  getMyPollsController,
+  getSinglePollController,
+  publishPollController,
+  getPublishedResultController
+} from "./poll.controller.js"
 
-import {  createPollValidator } from "./poll.validator.js"
+import {
+  createPollValidator
+} from "./poll.validator.js"
 
-import { getMyPollsController } from "./poll.controller.js"
+import {
+  getPollAnalyticsController
+} from "../analytics/analytics.controller.js"
 
-import { getSinglePollController } from "./poll.controller.js"
-
-import { publishPollController } from "./poll.controller.js"
-
-import { getPublishedResultController } from "./poll.controller.js"
 const router = Router()
 
-
-
+// CREATE POLL
 router.post(
 
-    "/create",
+  "/create",
 
-    authMiddleware,
+  authMiddleware,
 
-    validateMiddleware(createPollValidator),
+  validateMiddleware(
+    createPollValidator
+  ),
 
-    createPollController
+  createPollController
 
 )
 
+// GET ALL POLLS
 router.get(
 
-   "/my-polls",
+  "/my-polls",
 
-   authMiddleware,
-
-   getMyPollsController
+  getMyPollsController
 
 )
 
+// GET ANALYTICS
 router.get(
 
-   "/:id",
+  "/analytics/:pollId",
 
-   getSinglePollController
+  getPollAnalyticsController
 
 )
 
+// GET PUBLISHED RESULTS
+router.get(
+
+  "/results/:id",
+
+  getPublishedResultController
+
+)
+
+// GET SINGLE POLL
+router.get(
+
+  "/:id",
+
+  getSinglePollController
+
+)
+
+// PUBLISH RESULTS
 router.patch(
 
-   "/publish/:id",
+  "/publish/:id",
 
-   authMiddleware,
+  authMiddleware,
 
-   publishPollController
-
-)
-
-router.get(
-
-   "/results/:id",
-
-   getPublishedResultController
+  publishPollController
 
 )
-
-
 
 export default router

@@ -10,21 +10,54 @@ export const createPollService = async (
 
 ) => {
 
-    const poll = await Poll.create({
+    // VALIDATE QUESTIONS
 
-        ...pollData,
+    pollData.questions.forEach((question) => {
 
-        createdBy: userId
+        // Minimum 2 options
+
+        if (
+
+            !question.options ||
+
+            question.options.length < 2
+
+        ) {
+
+            throw ApiError.badRequest(
+
+                "Each question must have at least 2 options"
+
+            )
+
+        }
+
+        // Empty question validation
+
+        if (!question.question?.trim()) {
+
+            throw ApiError.badRequest(
+
+                "Question is required"
+
+            )
+
+        }
 
     })
 
+  const poll = await Poll.create({
 
+    ...pollData,
+
+    createdBy:
+      userId || "507f1f77bcf86cd799439011"
+
+})
 
     return poll
 
 }
-
-
 
 export const getMyPollsService = async (
 
@@ -32,17 +65,31 @@ export const getMyPollsService = async (
 
 ) => {
 
-    const polls = await Poll.find({
+    let polls
 
-        createdBy: userId
+    if (userId) {
 
-    }).sort({
+        polls = await Poll.find({
 
-        createdAt: -1
+            createdBy: userId
 
-    })
+        }).sort({
 
+            createdAt: -1
 
+        })
+
+    } else {
+
+        polls = await Poll.find()
+
+        .sort({
+
+            createdAt: -1
+
+        })
+
+    }
 
     return polls
 
@@ -79,43 +126,28 @@ export const getSinglePollService = async (
 }
 
 
-export const publishPollService = async (
 
-    pollId,
+export const publishPollService =
+  async (
+    pollId
+  ) => {
 
-    userId
-
-) => {
-
-    const poll = await Poll.findOne({
-
-        _id: pollId,
-
-        createdBy: userId
-
-    })
-
-
+    const poll =
+      await Poll.findById(
+        pollId
+      )
 
     if (!poll) {
 
-        throw ApiError.notFound(
-
-            "Poll not found"
-
-        )
+      throw ApiError.notFound(
+        "Poll not found"
+      )
 
     }
 
-
-
     poll.isPublished = true
 
-
-
     await poll.save()
-
-
 
     return poll
 

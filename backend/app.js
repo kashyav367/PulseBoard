@@ -1,5 +1,7 @@
 import express from "express"
+
 import cors from "cors"
+
 
 import authRoutes from "./src/modules/auth/auth.routes.js"
 
@@ -12,7 +14,7 @@ import pollRoutes from "./src/modules/poll/poll.routes.js"
 import responseRoutes from "./src/modules/response/response.routes.js"
 
 import analyticsRoutes from "./src/modules/analytics/analytics.routes.js"
-
+import passport from "./src/common/config/passport.js"
 
 
 const app = express()
@@ -21,6 +23,9 @@ const app = express()
 
 app.use(cors())
 app.use(express.json())
+app.use(
+  passport.initialize()
+)
 
 
 

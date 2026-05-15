@@ -1,121 +1,132 @@
 import mongoose from "mongoose"
 
-
 const questionSchema = new mongoose.Schema({
 
-    question: {
+  question: {
+
+    type: String,
+
+    required: true,
+
+    trim: true
+
+  },
+
+  options: [
+
+    {
+
+      text: {
 
         type: String,
 
-        required: true
+        required: true,
 
-    },
+        trim: true
 
+      },
 
+      votes: {
 
-    options: [
+        type: Number,
 
-        {
+        default: 0
 
-            type: String,
-
-            required: true
-
-        }
-
-    ],
-
-
-
-    required: {
-
-        type: Boolean,
-
-        default: false
+      }
 
     }
 
+  ],
+
+  required: {
+
+    type: Boolean,
+
+    default: false
+
+  }
+
 })
-
-
 
 const pollSchema = new mongoose.Schema({
 
-    title: {
+  title: {
 
-        type: String,
+    type: String,
 
-        required: true
+    required: true,
 
-    },
+    trim: true
 
+  },
 
+  description: {
 
-    description: {
+    type: String,
 
-        type: String
+    trim: true
 
-    },
+  },
 
+  questions: [questionSchema],
 
+  createdBy: {
 
-    questions: [questionSchema],
+    type: mongoose.Schema.Types.ObjectId,
 
+    ref: "User",
 
+    required: true
 
-    createdBy: {
+  },
 
-        type: mongoose.Schema.Types.ObjectId,
+  // Anonymous participation
 
-        ref: "User",
+  allowAnonymous: {
 
-        required: true
+    type: Boolean,
 
-    },
+    default: true
 
+  },
 
+  // Authenticated participation
 
-    allowAnonymous: {
+  allowAuthenticated: {
 
-        type: Boolean,
+    type: Boolean,
 
-        default: true
+    default: false
 
-    },
+  },
 
+  // Poll expiry
 
+  expiresAt: {
 
-    expiresAt: {
+    type: Date
 
-        type: Date
+  },
 
-    },
+  // Final results published or not
 
+  isPublished: {
 
+    type: Boolean,
 
-    isPublished: {
+    default: false
 
-        type: Boolean,
-
-        default: false
-
-    }
+  }
 
 }, {
 
-    timestamps: true
+  timestamps: true
 
 })
 
-
 const Poll = mongoose.model(
-
-    "Poll",
-
-    pollSchema
-
+  "Poll",
+  pollSchema
 )
-
-
 
 export default Poll

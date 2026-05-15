@@ -1,53 +1,62 @@
-import http from "http"
-
 import dotenv from "dotenv"
+
+dotenv.config()
+
+import http from "http"
 
 import { Server } from "socket.io"
 
 import app from "./app.js"
 
-import connectDB from "./src/common/config/db.js"
+import connectDB
+from "./src/common/config/db.js"
 
+import pollSocket
+from "./src/sockets/poll.socket.js"
 
-dotenv.config()
-
+const PORT =
+  process.env.PORT || 5000
 
 connectDB()
 
+const server =
+  http.createServer(app)
 
-const server = http.createServer(app)
+// SOCKET.IO
 
-
-const io = new Server(server, {
+const io =
+  new Server(server, {
 
     cors: {
 
-        origin: "*",
+      origin: "*",
 
-        methods: ["GET", "POST"]
+      methods: [
+        "GET",
+        "POST"
+      ]
 
     }
 
-})
+  })
 
+// USE SOCKETS
 
-io.on("connection", (socket) => {
+pollSocket(io)
 
-    console.log("User connected:", socket.id)
+// START SERVER
 
-    socket.on("disconnect", () => {
+server.listen(
+  PORT,
+  () => {
 
-        console.log("User disconnected:", socket.id)
+    console.log(
+      `Server running on port ${PORT}`
+    )
 
-    })
+  }
+)
 
-})
+// EXPORT IO
 
-
-const PORT = process.env.PORT || 5000
-
-server.listen(PORT, () => {
-
-    console.log(`Server running on port ${PORT}`)
-
-})
+export { io }

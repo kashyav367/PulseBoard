@@ -1,12 +1,9 @@
-import { submitResponseService }
-
-from "./response.service.js"
+import {
+  submitResponseService
+} from "./response.service.js"
 
 import ApiResponse
-
-from "../../common/utils/ApiResponse.js"
-
-
+  from "../../common/utils/ApiResponse.js"
 
 export const submitResponseController = async (
 
@@ -22,10 +19,7 @@ export const submitResponseController = async (
 
         const { answers } = req.body
 
-
-
         const response =
-
             await submitResponseService(
 
                 req.params.pollId,
@@ -35,8 +29,6 @@ export const submitResponseController = async (
                 req.user?._id || null
 
             )
-
-
 
         return ApiResponse.send(
 
@@ -50,9 +42,9 @@ export const submitResponseController = async (
 
         )
 
-
-
     } catch (error) {
+
+        console.log(error)
 
         next(error)
 
