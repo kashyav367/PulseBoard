@@ -1,196 +1,222 @@
 import Poll from "./poll.model.js"
+
 import ApiError from "../../common/utils/ApiError.js"
 
+// ==========================
+// CREATE POLL
+// ==========================
 
 export const createPollService = async (
 
-    pollData,
+  pollData,
 
-    userId
+  userId
 
 ) => {
 
-    // VALIDATE QUESTIONS
+  // AUTH CHECK
+  if (!userId) {
 
-    pollData.questions.forEach((question) => {
+    throw ApiError.unauthorized(
+      "Unauthorized access"
+    )
 
-        // Minimum 2 options
+  }
 
-        if (
+  // VALIDATE QUESTIONS
 
-            !question.options ||
+  pollData.questions.forEach(
 
-            question.options.length < 2
+    (question) => {
 
-        ) {
+      // Minimum 2 options
 
-            throw ApiError.badRequest(
+      if (
 
-                "Each question must have at least 2 options"
+        !question.options ||
 
-            )
+        question.options.length < 2
 
-        }
+      ) {
 
-        // Empty question validation
+        throw ApiError.badRequest(
 
-        if (!question.question?.trim()) {
+          "Each question must have at least 2 options"
 
-            throw ApiError.badRequest(
+        )
 
-                "Question is required"
+      }
 
-            )
+      // Empty question validation
 
-        }
+      if (
 
-    })
+        !question.question?.trim()
+
+      ) {
+
+        throw ApiError.badRequest(
+
+          "Question is required"
+
+        )
+
+      }
+
+    }
+
+  )
+
+  // CREATE POLL
 
   const poll = await Poll.create({
 
     ...pollData,
 
-    createdBy:
-      userId || "507f1f77bcf86cd799439011"
+    createdBy: userId
 
-})
+  })
 
-    return poll
+  return poll
 
 }
+
+// ==========================
+// GET MY POLLS
+// ==========================
 
 export const getMyPollsService = async (
 
-    userId
+  userId
 
 ) => {
 
-    let polls
+  // AUTH CHECK
 
-    if (userId) {
+  if (!userId) {
 
-        polls = await Poll.find({
+    throw ApiError.unauthorized(
 
-            createdBy: userId
+      "Unauthorized access"
 
-        }).sort({
+    )
 
-            createdAt: -1
+  }
 
-        })
+  const polls = await Poll.find({
 
-    } else {
+    createdBy: userId
 
-        polls = await Poll.find()
+  }).sort({
 
-        .sort({
+    createdAt: -1
 
-            createdAt: -1
+  })
 
-        })
-
-    }
-
-    return polls
+  return polls
 
 }
+
+// ==========================
+// GET SINGLE POLL
+// ==========================
 
 export const getSinglePollService = async (
 
-    pollId
+  pollId
 
 ) => {
 
-    const poll = await Poll.findById(
+  const poll = await Poll.findById(
 
-        pollId
+    pollId
+
+  )
+
+  if (!poll) {
+
+    throw ApiError.notFound(
+
+      "Poll not found"
 
     )
 
+  }
 
-
-    if (!poll) {
-
-        throw ApiError.notFound(
-
-            "Poll not found"
-
-        )
-
-    }
-
-
-
-    return poll
+  return poll
 
 }
 
+// ==========================
+// PUBLISH POLL
+// ==========================
 
+export const publishPollService = async (
 
-export const publishPollService =
-  async (
+  pollId
+
+) => {
+
+  const poll = await Poll.findById(
+
     pollId
-  ) => {
 
-    const poll =
-      await Poll.findById(
-        pollId
-      )
+  )
 
-    if (!poll) {
+  if (!poll) {
 
-      throw ApiError.notFound(
-        "Poll not found"
-      )
+    throw ApiError.notFound(
 
-    }
+      "Poll not found"
 
-    poll.isPublished = true
+    )
 
-    await poll.save()
+  }
 
-    return poll
+  poll.isPublished = true
+
+  await poll.save()
+
+  return poll
 
 }
+
+// ==========================
+// GET PUBLISHED RESULTS
+// ==========================
 
 export const getPublishedResultService = async (
 
-    pollId
+  pollId
 
 ) => {
 
-    const poll = await Poll.findById(
+  const poll = await Poll.findById(
 
-        pollId
+    pollId
+
+  )
+
+  if (!poll) {
+
+    throw ApiError.notFound(
+
+      "Poll not found"
 
     )
 
+  }
 
+  if (!poll.isPublished) {
 
-    if (!poll) {
+    throw ApiError.forbidden(
 
-        throw ApiError.notFound(
+      "Results not published yet"
 
-            "Poll not found"
+    )
 
-        )
+  }
 
-    }
-
-
-
-    if (!poll.isPublished) {
-
-        throw ApiError.forbidden(
-
-            "Results not published yet"
-
-        )
-
-    }
-
-
-
-    return poll
+  return poll
 
 }

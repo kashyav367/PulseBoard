@@ -69,9 +69,9 @@ export const getMyPollsController = async (
 
         const polls = await getMyPollsService(
 
-            null
+            req.user?._id
 
-         )
+        )
 
         return ApiResponse.send(
 

@@ -1,5 +1,27 @@
 import mongoose from "mongoose"
 
+const optionSchema = new mongoose.Schema({
+
+  text: {
+
+    type: String,
+
+    required: true,
+
+    trim: true
+
+  },
+
+  votes: {
+
+    type: Number,
+
+    default: 0
+
+  }
+
+})
+
 const questionSchema = new mongoose.Schema({
 
   question: {
@@ -12,31 +34,19 @@ const questionSchema = new mongoose.Schema({
 
   },
 
-  options: [
+  options: {
 
-    {
+    type: [optionSchema],
 
-      text: {
+    validate: [
 
-        type: String,
+      (val) => val.length >= 2,
 
-        required: true,
+      "At least 2 options required"
 
-        trim: true
+    ]
 
-      },
-
-      votes: {
-
-        type: Number,
-
-        default: 0
-
-      }
-
-    }
-
-  ],
+  },
 
   required: {
 
@@ -64,12 +74,21 @@ const pollSchema = new mongoose.Schema({
 
     type: String,
 
-    trim: true
+    trim: true,
+
+    default: "No description added"
 
   },
 
-  questions: [questionSchema],
+  questions: {
 
+    type: [questionSchema],
+
+    required: true
+
+  },
+
+  // Poll Owner
   createdBy: {
 
     type: mongoose.Schema.Types.ObjectId,
@@ -80,8 +99,7 @@ const pollSchema = new mongoose.Schema({
 
   },
 
-  // Anonymous participation
-
+  // Participation Modes
   allowAnonymous: {
 
     type: Boolean,
@@ -89,8 +107,6 @@ const pollSchema = new mongoose.Schema({
     default: true
 
   },
-
-  // Authenticated participation
 
   allowAuthenticated: {
 
@@ -100,21 +116,30 @@ const pollSchema = new mongoose.Schema({
 
   },
 
-  // Poll expiry
-
+  // Poll Expiry
   expiresAt: {
 
     type: Date
 
   },
 
-  // Final results published or not
-
+  // Results Visibility
   isPublished: {
 
     type: Boolean,
 
     default: false
+
+  },
+
+  // Poll Status
+  status: {
+
+    type: String,
+
+    enum: ["draft", "published", "expired"],
+
+    default: "draft"
 
   }
 

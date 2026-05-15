@@ -22,7 +22,9 @@ import {
 
 const router = Router()
 
+// ==========================
 // CREATE POLL
+// ==========================
 router.post(
 
   "/create",
@@ -37,25 +39,35 @@ router.post(
 
 )
 
-// GET ALL POLLS
+// ==========================
+// GET LOGGED IN USER POLLS
+// ==========================
 router.get(
 
   "/my-polls",
+
+  authMiddleware,
 
   getMyPollsController
 
 )
 
-// GET ANALYTICS
+// ==========================
+// GET POLL ANALYTICS
+// ==========================
 router.get(
 
   "/analytics/:pollId",
+
+  authMiddleware,
 
   getPollAnalyticsController
 
 )
 
+// ==========================
 // GET PUBLISHED RESULTS
+// ==========================
 router.get(
 
   "/results/:id",
@@ -64,7 +76,9 @@ router.get(
 
 )
 
+// ==========================
 // GET SINGLE POLL
+// ==========================
 router.get(
 
   "/:id",
@@ -73,7 +87,9 @@ router.get(
 
 )
 
+// ==========================
 // PUBLISH RESULTS
+// ==========================
 router.patch(
 
   "/publish/:id",
