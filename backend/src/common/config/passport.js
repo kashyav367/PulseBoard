@@ -9,6 +9,8 @@ import {
 }
 from "passport-google-oauth20"
 
+import User from "../../modules/auth/user.model.js"
+
 passport.use(
 
   new GoogleStrategy(
@@ -33,20 +35,31 @@ passport.use(
 
       try {
 
-       const user = {
+        let user =
+          await User.findOne({
 
-  _id: profile.id,
+            email:
+              profile.emails[0].value
 
-  name:
-    profile.displayName,
+          })
 
-  email:
-    profile.emails[0].value,
+        if (!user) {
 
-  avatar:
-    profile.photos[0].value,
+          user =
+            await User.create({
 
-}
+              name:
+                profile.displayName,
+
+              email:
+                profile.emails[0].value,
+
+              avatar:
+                profile.photos[0].value,
+
+            })
+
+        }
 
         return done(
           null,
