@@ -62,6 +62,9 @@ router.get(
 
       {
 
+        _id:
+          req.user._id,
+
         email:
           req.user.email,
 
