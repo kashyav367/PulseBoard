@@ -79,7 +79,7 @@ router.get(
 
     res.redirect(
 
-      `https://pulse-board-ebon.vercel.app/auth-success?token=${token}`
+      `${process.env.FRONTEND_URL}/auth-success?token=${token}`
 
     )
 
