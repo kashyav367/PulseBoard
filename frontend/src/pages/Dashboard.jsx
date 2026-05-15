@@ -22,7 +22,8 @@ function Dashboard() {
   const [polls, setPolls] =
     useState([])
 
-  // Fetch Polls
+  // FETCH USER POLLS
+
   useEffect(() => {
 
     const fetchPolls =
@@ -32,7 +33,20 @@ function Dashboard() {
 
           const response =
             await api.get(
-              "/polls/my-polls"
+
+              "/polls/my-polls",
+
+              {
+
+                headers: {
+
+                  Authorization:
+                    `Bearer ${localStorage.getItem("token")}`
+
+                }
+
+              }
+
             )
 
           setPolls(
@@ -51,7 +65,8 @@ function Dashboard() {
 
   }, [])
 
-  // Active Polls
+  // ACTIVE POLLS
+
   const activePolls =
     polls.filter(
 
@@ -65,7 +80,8 @@ function Dashboard() {
 
     )
 
-  // Expired Polls
+  // EXPIRED POLLS
+
   const expiredPolls =
     polls.filter(
 
@@ -81,7 +97,7 @@ function Dashboard() {
 
   return (
 
-    <div className="min-h-screen bg-[#fff8f1]">
+    <div className="min-h-screen bg-[#fff8f1] overflow-hidden">
 
       <Navbar />
 
@@ -89,7 +105,7 @@ function Dashboard() {
 
         {/* HERO */}
 
-        <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-amber-500 rounded-[2.8rem] px-10 py-12 text-white shadow-[10px_10px_0px_#7c2d12]">
+        <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-amber-500 rounded-[2.8rem] px-6 md:px-10 py-10 md:py-12 text-white shadow-[10px_10px_0px_#7c2d12]">
 
           <div className="relative z-10">
 
@@ -105,7 +121,7 @@ function Dashboard() {
 
             {/* Heading */}
 
-            <h1 className="text-5xl lg:text-6xl font-black leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
 
               Create & Manage
               <br />
@@ -116,7 +132,7 @@ function Dashboard() {
 
             {/* Subtitle */}
 
-            <p className="mt-6 text-lg text-orange-50 leading-8 max-w-2xl">
+            <p className="mt-6 text-base md:text-lg text-orange-50 leading-7 max-w-2xl">
 
               Create beautiful live polls, collect responses
               in real-time and manage audience engagement
@@ -130,7 +146,7 @@ function Dashboard() {
 
               <Link
                 to="/create-poll"
-                className="bg-white text-orange-600 hover:bg-orange-50 px-7 py-4 rounded-2xl font-semibold transition-all shadow-lg flex items-center gap-3"
+                className="w-full sm:w-auto bg-white text-orange-600 hover:bg-orange-50 px-7 py-4 rounded-2xl font-semibold transition-all shadow-lg flex items-center justify-center gap-3"
               >
 
                 <PlusCircle size={22} />
@@ -141,7 +157,7 @@ function Dashboard() {
 
               <a
                 href="#your-polls"
-                className="border border-white/30 bg-white/10 hover:bg-white/20 px-7 py-4 rounded-2xl font-semibold flex items-center gap-3 transition-all"
+                className="w-full sm:w-auto border border-white/30 bg-white/10 hover:bg-white/20 px-7 py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all"
               >
 
                 <BarChart3 size={22} />
@@ -158,7 +174,7 @@ function Dashboard() {
 
         {/* STATS */}
 
-        <div className="grid md:grid-cols-4 gap-6 mt-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
 
           <StatsCard
             title="Total Polls"
@@ -194,7 +210,7 @@ function Dashboard() {
 
         <div className="mt-14">
 
-          <div className="flex items-center justify-between mb-7">
+          <div className="flex items-center justify-between mb-7 flex-wrap gap-4">
 
             <h2 className="text-3xl font-bold text-stone-800">
 
@@ -204,13 +220,13 @@ function Dashboard() {
 
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            {/* Create */}
+            {/* CREATE */}
 
             <Link
               to="/create-poll"
-              className="bg-white border-2 border-stone-800 rounded-[30px] p-6 shadow-[6px_6px_0px_#fdba74] hover:-translate-y-1 transition-all block"
+              className="bg-white border-2 border-stone-800 rounded-[30px] p-6 shadow-[6px_6px_0px_#fdba74] hover:-translate-y-1 transition-all block overflow-hidden"
             >
 
               <div className="bg-orange-100 w-16 h-16 rounded-2xl flex items-center justify-center text-orange-600">
@@ -234,11 +250,11 @@ function Dashboard() {
 
             </Link>
 
-            {/* Analytics */}
+            {/* ANALYTICS */}
 
             <a
               href="#your-polls"
-              className="bg-white border-2 border-stone-800 rounded-[30px] p-6 shadow-[6px_6px_0px_#fdba74] hover:-translate-y-1 transition-all block"
+              className="bg-white border-2 border-stone-800 rounded-[30px] p-6 shadow-[6px_6px_0px_#fdba74] hover:-translate-y-1 transition-all block overflow-hidden"
             >
 
               <div className="bg-orange-100 w-16 h-16 rounded-2xl flex items-center justify-center text-orange-600">
@@ -262,11 +278,11 @@ function Dashboard() {
 
             </a>
 
-            {/* Manage */}
+            {/* MANAGE */}
 
             <a
               href="#your-polls"
-              className="bg-white border-2 border-stone-800 rounded-[30px] p-6 shadow-[6px_6px_0px_#fdba74] hover:-translate-y-1 transition-all block"
+              className="bg-white border-2 border-stone-800 rounded-[30px] p-6 shadow-[6px_6px_0px_#fdba74] hover:-translate-y-1 transition-all block overflow-hidden"
             >
 
               <div className="bg-orange-100 w-16 h-16 rounded-2xl flex items-center justify-center text-orange-600">
@@ -321,7 +337,7 @@ function Dashboard() {
 
             <Link
               to="/create-poll"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl transition font-semibold shadow-lg"
+              className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-2xl transition font-semibold shadow-lg text-center"
             >
 
               + Create Poll
@@ -332,7 +348,7 @@ function Dashboard() {
 
           {/* POLLS */}
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
             {
 
@@ -349,7 +365,7 @@ function Dashboard() {
 
               ) : (
 
-                <div className="bg-white border-2 border-stone-800 rounded-[32px] p-12 text-center col-span-2 shadow-[8px_8px_0px_#fdba74]">
+                <div className="bg-white border-2 border-stone-800 rounded-[32px] p-12 text-center col-span-1 lg:col-span-2 shadow-[8px_8px_0px_#fdba74]">
 
                   <h2 className="text-3xl font-bold text-stone-800">
 
