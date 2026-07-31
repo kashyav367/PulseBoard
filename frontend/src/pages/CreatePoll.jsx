@@ -561,10 +561,9 @@ function CreatePoll() {
 
                   dateFormat="MMMM d, yyyy h:mm aa"
 
-                  placeholderText="Or choose custom expiry date"
-
                   minDate={new Date()}
-
+                  className="w-full border border-orange-200 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-orange-100"
+                />
               </div>
 
               {/* Publish Results Option */}
