@@ -1,27 +1,22 @@
 import api from "../services/api"
-
 import { useState } from "react"
-
-import { useNavigate } from "react-router-dom"
-
+import { useNavigate, Link } from "react-router-dom"
+import toast from "react-hot-toast"
 import Navbar from "../components/Navbar"
-
 import DatePicker from "react-datepicker"
-
 import "react-datepicker/dist/react-datepicker.css"
-
 import {
   Trash2,
   Plus,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  Copy
 } from "lucide-react"
 
 function CreatePoll() {
-
   const navigate = useNavigate()
-
-  const [loading, setLoading] =
-    useState(false)
+  const [loading, setLoading] = useState(false)
+  const [createdPoll, setCreatedPoll] = useState(null)
 
   const [pollData, setPollData] =
     useState({
@@ -281,9 +276,8 @@ function CreatePoll() {
 
         )
 
-      console.log(
-        response.data
-      )
+      const createdData = response.data?.data || response.data
+      setCreatedPoll(createdData)
 
       toast.success("Poll Created Successfully! 🚀", {
         duration: 5000,
@@ -296,33 +290,16 @@ function CreatePoll() {
           padding: "16px"
         }
       })
-
-      setPollData({
-        title: "",
-        description: "",
-        expiresAt: null,
-        responseMode: "both",
-        publishResults: true,
-      })
-
-      setQuestions([
-        {
-          question: "",
-          required: true,
-          options: ["", ""]
-        }
-      ])
-
-      navigate("/dashboard", {
-        state: {
-          created: true,
-          pollTitle: finalData.title
-        }
-      })
-
     } catch (error) {
-
       console.log(error)
+      toast.error(
+        error.response?.data?.message ||
+        "Failed to create poll"
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
 
       toast.error(
         error.response?.data?.message ||
@@ -868,12 +845,66 @@ function CreatePoll() {
 
         </form>
 
+        {/* POLL CREATED SUCCESS MODAL */}
+        {createdPoll && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white border-2 border-stone-800 rounded-[32px] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in duration-200">
+              <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 size={36} />
+              </div>
+
+              <h2 className="text-3xl font-black text-center text-stone-800 mb-2">
+                Poll Created Successfully! 🚀
+              </h2>
+
+              <p className="text-center text-stone-600 mb-6 font-medium">
+                "<span className="font-bold text-stone-800">{createdPoll.title}</span>" is now published and accepting live responses.
+              </p>
+
+              {/* PUBLIC LINK BOX */}
+              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-6">
+                <p className="text-xs font-semibold text-stone-500 mb-2">Public Share Link</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin}/poll/${createdPoll.slug || createdPoll._id}`}
+                    className="flex-1 bg-white border border-orange-200 rounded-xl px-3 py-2 text-xs font-mono text-stone-700 outline-none overflow-x-auto"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/poll/${createdPoll.slug || createdPoll._id}`)
+                      toast.success("Link copied! 🚀")
+                    }}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0"
+                  >
+                    <Copy size={14} /> Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Link
+                  to={`/poll/${createdPoll.slug || createdPoll._id}`}
+                  className="bg-stone-900 hover:bg-black text-white py-3.5 rounded-2xl font-bold text-center text-sm transition"
+                >
+                  Vote Form 🗳️
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard", { state: { created: true, pollTitle: createdPoll.title } })}
+                  className="bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-2xl font-bold text-center text-sm transition"
+                >
+                  Dashboard 📊
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
     </div>
-
   )
-
 }
 
 export default CreatePoll
