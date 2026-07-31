@@ -4,7 +4,7 @@ import toast from "react-hot-toast"
 import api from "../services/api"
 import socket from "../services/socket"
 import Navbar from "../components/Navbar"
-import { Download, Loader2 } from "lucide-react"
+import { Download, Loader2, Users, Shield, ShieldCheck } from "lucide-react"
 
 import {
   PieChart,
@@ -25,7 +25,8 @@ function Analytics() {
     "#fb923c",
     "#fdba74",
     "#fed7aa",
-    "#f59e0b"
+    "#f59e0b",
+    "#ea580c"
   ]
 
   const fetchAnalytics = async () => {
@@ -34,10 +35,12 @@ function Analytics() {
       const pollRes = await api.get(`/polls/${id}`)
       setPoll(pollRes.data.data)
 
-      // Try dedicated analytics endpoint
+      // Get dedicated analytics endpoint
       try {
         const analyticsRes = await api.get(`/analytics/${id}`)
-        setAnalyticsData(analyticsRes.data.data)
+        if (analyticsRes.data?.data) {
+          setAnalyticsData(analyticsRes.data.data)
+        }
       } catch (e) {
         // Fallback to poll object
       }
@@ -53,8 +56,8 @@ function Analytics() {
 
     socket.emit("join_poll", id)
 
-    socket.on("vote_updated", (updatedPoll) => {
-      setPoll(updatedPoll)
+    socket.on("vote_updated", () => {
+      fetchAnalytics()
       toast("Vote updated live! ⚡", { icon: "📊" })
     })
 
@@ -67,18 +70,21 @@ function Analytics() {
   const exportToCSV = () => {
     if (!poll) return
 
+    const questionsList = analyticsData?.analytics || poll.questions || []
     let csvContent = "data:text/csv;charset=utf-8,"
     csvContent += `Poll Title,${poll.title}\n`
-    csvContent += `Created At,${poll.createdAt}\n\n`
+    csvContent += `Created At,${poll.createdAt}\n`
+    csvContent += `Total Responses,${analyticsData?.totalResponses || 0}\n\n`
     csvContent += "Question Number,Question Text,Option Text,Votes Count,Percentage\n"
 
-    poll.questions?.forEach((q, qIndex) => {
-      const qTotalVotes = q.options?.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 0
+    questionsList.forEach((q, qIndex) => {
+      const qText = q.questionText || q.question || ""
+      const qTotalVotes = q.totalVotes || q.options?.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 0
 
       q.options?.forEach((opt) => {
         const votes = opt.votes || 0
-        const percentage = qTotalVotes > 0 ? ((votes / qTotalVotes) * 100).toFixed(1) : "0.0"
-        csvContent += `"${qIndex + 1}","${q.question.replace(/"/g, '""')}","${opt.text.replace(/"/g, '""')}",${votes},${percentage}%\n`
+        const percentage = opt.percentage !== undefined ? opt.percentage : (qTotalVotes > 0 ? ((votes / qTotalVotes) * 100).toFixed(1) : "0.0")
+        csvContent += `"${qIndex + 1}","${qText.replace(/"/g, '""')}","${opt.text.replace(/"/g, '""')}",${votes},${percentage}%\n`
       })
     })
 
@@ -115,6 +121,15 @@ function Analytics() {
     )
   }
 
+  // Determine questions list from analytics endpoint if available
+  const displayQuestions = analyticsData?.analytics?.length > 0
+    ? analyticsData.analytics
+    : poll.questions?.map((q) => ({
+        questionText: q.question,
+        options: q.options,
+        totalVotes: q.options?.reduce((acc, opt) => acc + (opt.votes || 0), 0)
+      })) || []
+
   return (
     <div className="min-h-screen bg-[#fff8f1]">
       <Navbar />
@@ -137,7 +152,7 @@ function Analytics() {
                 </div>
               </div>
 
-              <p className="text-2xl opacity-90">
+              <p className="text-2xl opacity-90 font-medium">
                 {poll.title}
               </p>
             </div>
@@ -151,77 +166,115 @@ function Analytics() {
                 Export CSV
               </button>
 
-              <div className="bg-white/20 px-6 py-4 rounded-2xl backdrop-blur-md min-w-[160px]">
-                <p className="text-sm opacity-80 mb-1">Total Questions</p>
-                <h2 className="text-4xl font-black">{poll.questions?.length}</h2>
+              <div className="bg-white/20 px-6 py-4 rounded-2xl backdrop-blur-md min-w-[140px]">
+                <p className="text-xs opacity-80 mb-1 font-medium">Total Responses</p>
+                <h2 className="text-4xl font-black">{analyticsData?.totalResponses ?? 0}</h2>
               </div>
             </div>
           </div>
+
+          {/* RESPONSE BREAKDOWN BAR */}
+          {analyticsData && (
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-white/20">
+              <div className="flex items-center gap-3 bg-white/10 px-4 py-3 rounded-2xl backdrop-blur">
+                <Users className="w-6 h-6" />
+                <div>
+                  <p className="text-xs opacity-80 font-medium">Total Participants</p>
+                  <p className="text-lg font-bold">{analyticsData.totalResponses || 0}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 px-4 py-3 rounded-2xl backdrop-blur">
+                <ShieldCheck className="w-6 h-6" />
+                <div>
+                  <p className="text-xs opacity-80 font-medium">Authenticated Votes</p>
+                  <p className="text-lg font-bold">{analyticsData.authenticatedResponses || 0}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 bg-white/10 px-4 py-3 rounded-2xl backdrop-blur">
+                <Shield className="w-6 h-6" />
+                <div>
+                  <p className="text-xs opacity-80 font-medium">Anonymous Votes</p>
+                  <p className="text-lg font-bold">{analyticsData.anonymousResponses || 0}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* QUESTIONS */}
-        {poll.questions?.map((question, index) => {
-          const totalVotes = question.options?.reduce((acc, option) => acc + Number(option.votes || 0), 0)
+        {displayQuestions.map((question, index) => {
+          const qTotalVotes = question.totalVotes || question.options?.reduce((acc, option) => acc + Number(option.votes || 0), 0) || 0
           const maxVotes = Math.max(...(question.options?.map((o) => Number(o.votes || 0)) || [0]))
+          const questionText = question.questionText || question.question || `Question ${index + 1}`
 
           return (
             <div
               key={index}
-              className="bg-white border-2 border-stone-800 rounded-[32px] p-8 mb-10 shadow-[8px_8px_0px_#fdba74] hover:translate-y-[-5px] transition-all duration-300"
+              className="bg-white border-2 border-stone-800 rounded-[32px] p-8 mb-10 shadow-[8px_8px_0px_#fdba74] hover:translate-y-[-3px] transition-all duration-300"
             >
               {/* HEADER */}
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 mb-10">
                 <div>
-                  <h2 className="text-3xl font-black text-stone-800 mb-3">
-                    Q{index + 1}. {question.question}
+                  <h2 className="text-3xl font-black text-stone-800 mb-2">
+                    Q{index + 1}. {questionText}
                   </h2>
 
-                  {totalVotes === 0 && (
+                  {qTotalVotes === 0 && (
                     <p className="text-orange-500 font-semibold">
-                      No votes yet 🚀
+                      No responses recorded yet 🚀
                     </p>
                   )}
                 </div>
 
-                <div className="bg-orange-100 text-orange-600 px-5 py-3 rounded-full font-black text-lg">
-                  {totalVotes} Total Votes
+                <div className="bg-orange-100 text-orange-700 px-5 py-3 rounded-full font-black text-lg">
+                  {qTotalVotes} Votes
                 </div>
               </div>
 
               {/* GRID */}
               <div className="grid lg:grid-cols-2 gap-10 items-center">
                 {/* PIE CHART */}
-                <div className="w-full h-[350px]">
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie
-                        data={question.options}
-                        dataKey="votes"
-                        nameKey="text"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        innerRadius={70}
-                        paddingAngle={5}
-                        label
-                      >
-                        {question.options?.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={COLORS[i % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <div className="w-full h-[320px] bg-orange-50/50 rounded-3xl p-4 border border-orange-100 flex items-center justify-center">
+                  {qTotalVotes > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={question.options}
+                          dataKey="votes"
+                          nameKey="text"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          innerRadius={55}
+                          paddingAngle={4}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                          {question.options?.map((_, i) => (
+                            <Cell
+                              key={i}
+                              fill={COLORS[i % COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value, name) => [`${value} votes`, name]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-stone-400 font-semibold text-center">
+                      Chart will appear once votes are cast 📈
+                    </p>
+                  )}
                 </div>
 
                 {/* OPTIONS */}
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {question.options?.map((option, i) => {
                     const votes = Number(option.votes || 0)
-                    const percentage = totalVotes > 0 ? (votes / totalVotes) * 100 : 0
+                    const percentage = option.percentage !== undefined
+                      ? option.percentage
+                      : (qTotalVotes > 0 ? (votes / qTotalVotes) * 100 : 0)
                     const isWinner = votes === maxVotes && votes > 0
 
                     return (
@@ -229,38 +282,38 @@ function Analytics() {
                         key={i}
                         className={`rounded-2xl p-5 border-2 transition-all duration-300 ${
                           isWinner
-                            ? "border-orange-500 bg-orange-50"
-                            : "border-orange-100"
+                            ? "border-orange-500 bg-orange-50/80 shadow-sm"
+                            : "border-orange-100 hover:border-orange-200"
                         }`}
                       >
                         {/* TOP */}
                         <div className="flex justify-between items-center mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-black text-lg text-stone-800">
+                            <span className="font-bold text-lg text-stone-800">
                               {option.text}
                             </span>
 
                             {isWinner && (
-                              <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold">
+                              <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-sm">
                                 👑 Leading
                               </span>
                             )}
                           </div>
 
-                          <span className="font-black text-orange-500 text-lg">
-                            {votes} votes
+                          <span className="font-black text-orange-600 text-lg">
+                            {votes} {votes === 1 ? "vote" : "votes"}
                           </span>
                         </div>
 
                         {/* BAR */}
-                        <div className="relative w-full bg-orange-100 rounded-full h-6 overflow-hidden">
+                        <div className="relative w-full bg-orange-100/80 rounded-full h-5 overflow-hidden">
                           <div
-                            className="bg-gradient-to-r from-orange-500 to-amber-500 h-6 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3"
+                            className="bg-gradient-to-r from-orange-500 to-amber-500 h-5 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3"
                             style={{
-                              width: `${percentage}%`
+                              width: `${Math.max(percentage, votes > 0 ? 5 : 0)}%`
                             }}
                           >
-                            {percentage > 10 && (
+                            {percentage > 12 && (
                               <span className="text-white text-xs font-bold">
                                 {percentage.toFixed(0)}%
                               </span>
@@ -269,7 +322,7 @@ function Analytics() {
                         </div>
 
                         {/* PERCENT */}
-                        <p className="text-right text-sm mt-2 text-stone-500 font-semibold">
+                        <p className="text-right text-xs mt-2 text-stone-500 font-bold">
                           {percentage.toFixed(1)}%
                         </p>
                       </div>
@@ -285,4 +338,5 @@ function Analytics() {
   )
 }
 
-export default Analytics
+export default Analytics
+
