@@ -163,118 +163,58 @@ function CreatePoll() {
 
     e.preventDefault()
 
-    if (
-      !pollData.title.trim()
-    ) {
+  const handleSubmit = async (e) => {
+    e.preventDefault()
 
-      toast.error(
-        "Poll title required"
-      )
-
+    if (!pollData.title?.trim()) {
+      toast.error("Please enter a poll title! ✏️")
       return
-
     }
 
-    for (const q of questions) {
-
-      if (
-        !q.question.trim()
-      ) {
-
-        toast.error(
-          "Question cannot be empty"
-        )
-
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i]
+      if (!q.question?.trim()) {
+        toast.error(`Question ${i + 1} cannot be empty! ✏️`)
         return
-
       }
 
-      const validOptions =
-        q.options.filter(
-          (opt) => opt.trim()
-        )
-
-      if (
-        validOptions.length < 2
-      ) {
-
-        toast.error(
-          "Each question needs at least 2 options"
-        )
-
+      const validOptions = q.options.filter((opt) => opt.trim())
+      if (validOptions.length < 2) {
+        toast.error(`Question ${i + 1} needs at least 2 valid options! ✏️`)
         return
-
       }
-
     }
 
-  const cleanedQuestions =
-  questions.map((q) => ({
-
-    ...q,
-
-    options:
-
-      q.options
-
-        .filter(
-          (opt) => opt.trim()
-        )
-
+    const cleanedQuestions = questions.map((q) => ({
+      ...q,
+      question: q.question.trim(),
+      options: q.options
+        .filter((opt) => opt.trim())
         .map((opt) => ({
-
-          text: opt,
-
+          text: opt.trim(),
           votes: 0
-
         }))
-
-  }))
+    }))
 
     const finalData = {
-
       ...pollData,
-
+      isPublished: pollData.publishResults,
       allowAnonymous:
-
-        pollData.responseMode ===
-          "anonymous" ||
-
-        pollData.responseMode ===
-          "both",
-
+        pollData.responseMode === "anonymous" ||
+        pollData.responseMode === "both",
       allowAuthenticated:
-
-        pollData.responseMode ===
-          "authenticated" ||
-
-        pollData.responseMode ===
-          "both",
-
-      questions:
-        cleanedQuestions
-
+        pollData.responseMode === "authenticated" ||
+        pollData.responseMode === "both",
+      questions: cleanedQuestions
     }
 
     try {
-
       setLoading(true)
-
-      const response =
-        await api.post(
-
-          "/polls/create",
-
-          finalData,
-
-          {
-            headers: {
-              Authorization:
-                `Bearer ${localStorage.getItem("token")}`
-            }
-          }
-
-        )
+      const response = await api.post("/polls/create", finalData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      })
 
       const createdData = response.data?.data || response.data
       setCreatedPoll(createdData)
@@ -291,27 +231,13 @@ function CreatePoll() {
         }
       })
     } catch (error) {
-      console.log(error)
+      console.log("Create poll error:", error)
       toast.error(
-        error.response?.data?.message ||
-        "Failed to create poll"
+        error.response?.data?.message || "Failed to create poll"
       )
     } finally {
       setLoading(false)
     }
-  }
-
-      toast.error(
-        error.response?.data?.message ||
-        "Failed to create poll"
-      )
-
-    } finally {
-
-      setLoading(false)
-
-    }
-
   }
 
   return (
