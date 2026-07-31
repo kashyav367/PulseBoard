@@ -1,9 +1,10 @@
 import { io } from "socket.io-client"
 
-const socket = io(
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000"
 
-  "https://pulseboard-o4dg.onrender.com"
+const socket = io(SOCKET_URL, {
+  autoConnect: true,
+  transports: ["websocket", "polling"]
+})
 
-)
-
-export default socket
+export default socket

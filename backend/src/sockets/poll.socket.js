@@ -12,35 +12,21 @@ const pollSocket = (
       )
 
       // JOIN POLL ROOM
-
-      socket.on(
-        "join_poll",
-        (pollId) => {
-
-          socket.join(
-            pollId
-          )
-
-          console.log(
-            `Joined poll room: ${pollId}`
-          )
-
+      socket.on("join_poll", (pollId) => {
+        if (pollId) {
+          socket.join(pollId.toString())
         }
-      )
+      })
+
+      // LEAVE POLL ROOM
+      socket.on("leave_poll", (pollId) => {
+        if (pollId) {
+          socket.leave(pollId.toString())
+        }
+      })
 
       // DISCONNECT
-
-      socket.on(
-        "disconnect",
-        () => {
-
-          console.log(
-            "User disconnected:",
-            socket.id
-          )
-
-        }
-      )
+      socket.on("disconnect", () => {})
 
     }
   )

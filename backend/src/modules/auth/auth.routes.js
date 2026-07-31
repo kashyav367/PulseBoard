@@ -1,93 +1,44 @@
 import { Router } from "express"
-
 import passport from "passport"
-
-import jwt from "jsonwebtoken"
+import generateToken from "../../common/utils/generateToken.js"
+import authMiddleware from "../../common/middleware/authMiddleware.js"
+import { registerController, loginController, getMeController } from "./auth.controller.js"
 
 const router = Router()
 
+// LOCAL AUTH ROUTES
+router.post("/register", registerController)
+router.post("/login", loginController)
+router.get("/me", authMiddleware, getMeController)
+
 // GOOGLE LOGIN
-
 router.get(
-
   "/google",
-
   passport.authenticate(
-
     "google",
-
     {
-
       scope: [
-
         "profile",
-
         "email"
-
       ],
-
     }
-
   )
-
 )
 
 // GOOGLE CALLBACK
-
 router.get(
-
   "/google/callback",
-
   passport.authenticate(
-
     "google",
-
     {
-
       session: false,
-
     }
-
   ),
-
-  async (
-
-    req,
-
-    res
-
-  ) => {
-
-    const token = jwt.sign(
-
-      {
-
-        _id:
-          req.user._id,
-
-        email:
-          req.user.email,
-
-      },
-
-      process.env.JWT_SECRET,
-
-      {
-
-        expiresIn: "7d",
-
-      }
-
-    )
-
-    res.redirect(
-
-      `${process.env.FRONTEND_URL}/auth-success?token=${token}`
-
-    )
-
+  async (req, res) => {
+    const token = generateToken(req.user)
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173"
+    res.redirect(`${frontendUrl}/auth-success?token=${token}`)
   }
-
 )
 
-export default router
+export default router

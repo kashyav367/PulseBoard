@@ -145,7 +145,7 @@ function CreatePoll() {
 
     if (questions.length === 1) {
 
-      alert(
+      toast.error(
         "At least one question required"
       )
 
@@ -172,7 +172,7 @@ function CreatePoll() {
       !pollData.title.trim()
     ) {
 
-      alert(
+      toast.error(
         "Poll title required"
       )
 
@@ -186,7 +186,7 @@ function CreatePoll() {
         !q.question.trim()
       ) {
 
-        alert(
+        toast.error(
           "Question cannot be empty"
         )
 
@@ -203,7 +203,7 @@ function CreatePoll() {
         validOptions.length < 2
       ) {
 
-        alert(
+        toast.error(
           "Each question needs at least 2 options"
         )
 
@@ -285,7 +285,7 @@ function CreatePoll() {
         response.data
       )
 
-      alert(
+      toast.success(
         "Poll Created Successfully 🚀"
       )
 
@@ -311,7 +311,7 @@ function CreatePoll() {
 
       console.log(error)
 
-      alert(
+      toast.error(
         error.response?.data?.message ||
         "Failed to create poll"
       )

@@ -6,7 +6,7 @@ import {
 } from "react-router-dom"
 
 import api from "../services/api"
-
+import toast from "react-hot-toast"
 import Navbar from "../components/Navbar"
 
 function PollForm() {
@@ -64,94 +64,42 @@ function PollForm() {
   // Submit
 
   const handleSubmit = async (e) => {
-
     e.preventDefault()
 
     // Required Validation
-
-    for (
-      let index = 0;
-      index < poll.questions.length;
-      index++
-    ) {
-
+    for (let index = 0; index < poll.questions.length; index++) {
       const q = poll.questions[index]
-
-      if (
-        q.required &&
-        !answers[index]
-      ) {
-
-        alert(
-          `Please answer: ${q.question}`
-        )
-
+      if (q.required && !answers[index]) {
+        toast.error(`Please answer required question ${index + 1}: "${q.question}"`)
         return
-
       }
-
     }
 
     try {
-
-      const formattedAnswers =
-        Object.entries(answers).map(
-
-          ([questionIndex, selectedOption]) => ({
-
-            questionIndex:
-              Number(questionIndex),
-
-            selectedOption
-
-          })
-
-        )
-
-      const response =
-        await api.post(
-
-          `/responses/${id}`,
-
-          {
-            answers:
-              formattedAnswers
-          }
-
-        )
-
-      console.log(response.data)
-
-alert(
-  "Response Submitted Successfully 🚀"
-)
-
-const updatedPoll =
-  await api.get(
-    `/polls/${id}`
-  )
-
-if (
-  updatedPoll.data.data
-    .isPublished
-) {
-
-  navigate(
-    `/analytics/${poll._id}`
-  )
-
-}
-
-    } catch (error) {
-
-      console.log(error)
-
-      alert(
-        "Something went wrong"
+      const formattedAnswers = Object.entries(answers).map(
+        ([questionIndex, selectedOption]) => ({
+          questionIndex: Number(questionIndex),
+          selectedOption
+        })
       )
 
-    }
+      await api.post(`/responses/${id}`, {
+        answers: formattedAnswers
+      })
 
+      toast.success("Response Submitted Successfully 🚀")
+
+      const updatedPoll = await api.get(`/polls/${id}`)
+
+      if (updatedPoll.data?.data?.isPublished) {
+        navigate(`/analytics/${poll._id}`)
+      } else {
+        navigate("/dashboard")
+      }
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to submit response"
+      toast.error(msg)
+    }
   }
 
   // Loading UI

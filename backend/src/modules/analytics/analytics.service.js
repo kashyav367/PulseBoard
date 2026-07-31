@@ -1,154 +1,67 @@
 import Response from "../response/response.model.js"
-
 import Poll from "../poll/poll.model.js"
-
 import ApiError from "../../common/utils/ApiError.js"
 
-export const getPollAnalyticsService = async (
-
-    pollId
-
-) => {
-
-    const poll = await Poll.findById(
-
-        pollId
-
-    )
+export const getPollAnalyticsService = async (pollIdOrSlug, requestingUserId = null) => {
+    let poll
+    if (pollIdOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
+        poll = await Poll.findById(pollIdOrSlug)
+    } else {
+        poll = await Poll.findOne({ slug: pollIdOrSlug })
+    }
 
     if (!poll) {
-
-        throw ApiError.notFound(
-
-            "Poll not found"
-
-        )
-
+        throw ApiError.notFound("Poll not found")
     }
 
-    const responses = await Response.find({
+    const responses = await Response.find({ poll: poll._id })
 
-        poll: pollId
+    const anonymousResponses = responses.filter((res) => !res.user).length
+    const authenticatedResponses = responses.filter((res) => res.user).length
 
-    })
-
-    // PARTICIPATION INSIGHTS
-
-    const anonymousResponses =
-        responses.filter(
-
-            (response) => !response.user
-
-        ).length
-
-    const authenticatedResponses =
-        responses.filter(
-
-            (response) => response.user
-
-        ).length
-
-    // QUESTION ANALYTICS
-
-    const analytics = poll.questions.map(
-
-        (question, index) => {
-
-            const optionCounts = {}
-
-            question.options.forEach(
-
-                (option) => {
-
-                    optionCounts[option] = 0
-
+    const questionAnalytics = poll.questions.map((q, qIndex) => {
+        const optionStats = q.options.map((opt) => {
+            const votesCount = responses.reduce((count, response) => {
+                const answer = response.answers.find(a => a.questionIndex === qIndex)
+                if (answer && (answer.selectedOption.trim() === opt.text.trim() || answer.selectedOption === opt._id?.toString())) {
+                    return count + 1
                 }
+                return count
+            }, 0)
 
-            )
-
-            responses.forEach((response) => {
-
-                const answer =
-                    response.answers.find(
-
-                        (a) =>
-
-                            a.questionIndex === index
-
-                    )
-
-                if (answer) {
-
-                    optionCounts[
-                        answer.selectedOption
-                    ]++
-
-                }
-
-            })
-
-            // PERCENTAGES
-
-            const percentages = {}
-
-            Object.keys(optionCounts).forEach(
-
-                (option) => {
-
-                    percentages[option] =
-
-                        responses.length > 0
-
-                            ? (
-
-                                (
-                                    optionCounts[
-                                        option
-                                    ] /
-
-                                    responses.length
-
-                                ) * 100
-
-                            ).toFixed(1)
-
-                            : 0
-
-                }
-
-            )
+            const totalQuestionResponses = responses.length
+            const percentage = totalQuestionResponses > 0 ? ((votesCount / totalQuestionResponses) * 100).toFixed(1) : "0.0"
 
             return {
-
-                question:
-                    question.question,
-
-                totalResponses:
-                    responses.length,
-
-                optionCounts,
-
-                percentages
-
+                optionId: opt._id,
+                text: opt.text,
+                votes: votesCount,
+                percentage: parseFloat(percentage)
             }
+        })
 
+        return {
+            questionId: q._id,
+            questionText: q.question,
+            required: q.required,
+            options: optionStats,
+            totalVotes: responses.length
         }
-
-    )
+    })
 
     return {
-
+        pollId: poll._id,
         pollTitle: poll.title,
-
-        totalResponses:
-            responses.length,
-
+        description: poll.description,
+        slug: poll.slug,
+        isPublished: poll.isPublished,
+        status: poll.status,
+        createdAt: poll.createdAt,
+        expiresAt: poll.expiresAt,
+        totalResponses: responses.length,
         anonymousResponses,
-
         authenticatedResponses,
-
-        analytics
-
+        questions: poll.questions,
+        analytics: questionAnalytics
     }
-
-}
+}
