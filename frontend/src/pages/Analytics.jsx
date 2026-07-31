@@ -397,6 +397,8 @@ function Analytics() {
       </div>
     </div>
   )
+}
+
 export default Analytics
 
 
