@@ -6,13 +6,63 @@ import socket from "../services/socket"
 import Navbar from "../components/Navbar"
 import { Download, Loader2, Users, Shield, ShieldCheck, PieChart as PieIcon, BarChart3 } from "lucide-react"
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer
-} from "recharts"
+// Pure SVG Bulletproof Donut Chart
+function CustomDonutChart({ data, totalVotes, colors }) {
+  if (!totalVotes || totalVotes <= 0 || !data || data.length === 0) return null
+
+  let accumulatedPercent = 0
+  const radius = 65
+  const circumference = 2 * Math.PI * radius
+
+  const slices = data.map((item, index) => {
+    const votes = Number(item.votes) || 0
+    const percent = votes / totalVotes
+    const strokeDasharray = `${percent * circumference} ${circumference}`
+    const strokeDashoffset = -accumulatedPercent * circumference
+    accumulatedPercent += percent
+
+    return {
+      ...item,
+      color: colors[index % colors.length],
+      strokeDasharray,
+      strokeDashoffset,
+      percentStr: (percent * 100).toFixed(0)
+    }
+  })
+
+  return (
+    <div className="relative w-60 h-60 flex items-center justify-center">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+        <circle
+          cx="100"
+          cy="100"
+          r={radius}
+          fill="transparent"
+          stroke="#ffedd5"
+          strokeWidth="28"
+        />
+        {slices.map((slice, i) => (
+          <circle
+            key={i}
+            cx="100"
+            cy="100"
+            r={radius}
+            fill="transparent"
+            stroke={slice.color}
+            strokeWidth="28"
+            strokeDasharray={slice.strokeDasharray}
+            strokeDashoffset={slice.strokeDashoffset}
+            className="transition-all duration-500 hover:opacity-80"
+          />
+        ))}
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center text-center">
+        <span className="text-3xl font-black text-stone-800">{totalVotes}</span>
+        <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Votes</span>
+      </div>
+    </div>
+  )
+}
 
 function Analytics() {
   const { id } = useParams()
@@ -22,22 +72,20 @@ function Analytics() {
 
   const COLORS = [
     "#f97316",
+    "#ea580c",
     "#fb923c",
     "#fdba74",
-    "#fed7aa",
     "#f59e0b",
-    "#ea580c"
+    "#d97706"
   ]
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true)
-      // First get poll details
       const pollRes = await api.get(`/polls/${id}`)
       const fetchedPoll = pollRes.data?.data || pollRes.data
       setPoll(fetchedPoll)
 
-      // Get dedicated analytics endpoint
       try {
         const analyticsRes = await api.get(`/analytics/${id}`)
         const data = analyticsRes.data?.data || analyticsRes.data
@@ -125,7 +173,7 @@ function Analytics() {
           <h1 className="text-3xl font-black text-red-500 mb-3">
             Poll not found 😢
           </h1>
-          <p className="text-stone-600 mb-6">The requested poll analytics could not be loaded or does not exist.</p>
+          <p className="text-stone-600 mb-6 font-medium">The requested poll analytics could not be loaded or does not exist.</p>
           <a href="/dashboard" className="inline-block bg-orange-500 text-white font-bold px-6 py-3 rounded-2xl hover:bg-orange-600 transition">
             Back to Dashboard
           </a>
@@ -134,7 +182,6 @@ function Analytics() {
     )
   }
 
-  // Determine questions list cleanly
   const displayQuestions = (analyticsData?.analytics && analyticsData.analytics.length > 0)
     ? analyticsData.analytics
     : (poll.questions?.map((q) => ({
@@ -158,13 +205,13 @@ function Analytics() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 relative z-10">
             <div>
               <div className="flex items-center gap-4 mb-4 flex-wrap">
-                <h1 className="text-5xl font-black">
+                <h1 className="text-5xl font-black tracking-tight">
                   Live Analytics 📊
                 </h1>
 
                 <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full backdrop-blur">
                   <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="font-semibold">LIVE</span>
+                  <span className="font-semibold text-sm">LIVE</span>
                 </div>
               </div>
 
@@ -224,7 +271,7 @@ function Analytics() {
           <div className="bg-white border-2 border-stone-800 rounded-[32px] p-10 text-center shadow-[8px_8px_0px_#fdba74]">
             <BarChart3 className="w-16 h-16 text-orange-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-stone-800 mb-2">No Questions Found</h2>
-            <p className="text-stone-500">This poll does not contain any questions to display analytics for.</p>
+            <p className="text-stone-500 font-medium">This poll does not contain any questions to display analytics for.</p>
           </div>
         ) : (
           displayQuestions.map((question, index) => {
@@ -233,7 +280,6 @@ function Analytics() {
             const maxVotes = Math.max(...(options.map((o) => Number(o.votes || 0)) || [0]))
             const questionText = question.questionText || question.question || `Question ${index + 1}`
 
-            // Format chart data safely
             const chartData = options.map((opt) => ({
               text: String(opt.text || "Option"),
               votes: Number(opt.votes) || 0
@@ -265,35 +311,10 @@ function Analytics() {
 
                 {/* GRID */}
                 <div className="grid lg:grid-cols-2 gap-10 items-center">
-                  {/* PIE CHART */}
+                  {/* CHART CONTAINER */}
                   <div className="w-full h-[320px] bg-orange-50/50 rounded-3xl p-4 border border-orange-100 flex items-center justify-center min-h-[300px]">
                     {qTotalVotes > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            dataKey="votes"
-                            nameKey="text"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={95}
-                            innerRadius={50}
-                            paddingAngle={4}
-                            label={({ name, percent }) => {
-                              const pctVal = (typeof percent === "number" && !isNaN(percent)) ? (percent * 100).toFixed(0) : "0"
-                              return `${name || "Option"} (${pctVal}%)`
-                            }}
-                          >
-                            {chartData.map((_, i) => (
-                              <Cell
-                                key={i}
-                                fill={COLORS[i % COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value, name) => [`${value} votes`, name]} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <CustomDonutChart data={chartData} totalVotes={qTotalVotes} colors={COLORS} />
                     ) : (
                       <div className="text-center p-6">
                         <PieIcon className="w-12 h-12 text-orange-300 mx-auto mb-2 opacity-60" />
@@ -312,6 +333,7 @@ function Analytics() {
                         ? Number(option.percentage)
                         : (qTotalVotes > 0 ? (votes / qTotalVotes) * 100 : 0)
                       const isWinner = votes === maxVotes && votes > 0
+                      const optColor = COLORS[i % COLORS.length]
 
                       return (
                         <div
@@ -324,7 +346,8 @@ function Analytics() {
                         >
                           {/* TOP */}
                           <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
+                              <span className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: optColor }}></span>
                               <span className="font-bold text-lg text-stone-800">
                                 {option.text}
                               </span>
@@ -344,9 +367,10 @@ function Analytics() {
                           {/* BAR */}
                           <div className="relative w-full bg-orange-100/80 rounded-full h-5 overflow-hidden">
                             <div
-                              className="bg-gradient-to-r from-orange-500 to-amber-500 h-5 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3"
+                              className="h-5 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3"
                               style={{
-                                width: `${Math.max(percentage, votes > 0 ? 5 : 0)}%`
+                                width: `${Math.max(percentage, votes > 0 ? 5 : 0)}%`,
+                                backgroundColor: optColor
                               }}
                             >
                               {percentage > 12 && (
@@ -373,8 +397,6 @@ function Analytics() {
       </div>
     </div>
   )
-}
-
 export default Analytics
 
 

@@ -29,12 +29,8 @@ export const submitResponseService = async (
     }
 
     // 3. CHECK PARTICIPATION PERMISSIONS
-    if (poll.allowAuthenticated && !userId) {
-        throw ApiError.forbidden("This poll requires you to log in before submitting a response")
-    }
-
     if (!poll.allowAnonymous && !userId) {
-        throw ApiError.forbidden("Anonymous submissions are not allowed for this poll")
+        throw ApiError.forbidden("This poll requires you to log in before submitting a response")
     }
 
     // 4. PREVENT DUPLICATE RESPONSES
