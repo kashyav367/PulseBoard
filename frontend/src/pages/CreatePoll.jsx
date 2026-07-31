@@ -285,9 +285,15 @@ function CreatePoll() {
         response.data
       )
 
-      toast.success(
-        "Poll Created Successfully 🚀"
-      )
+      toast.success("Poll Created Successfully! 🚀", {
+        duration: 4000,
+        style: {
+          borderRadius: "16px",
+          background: "#333",
+          color: "#fff",
+          fontWeight: "bold"
+        }
+      })
 
       setPollData({
         title: "",

@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Loader2
 } from "lucide-react"
-import QRCode from "react-qr-code"
 
 function PublishedResults() {
   const { id } = useParams()
@@ -148,8 +147,13 @@ function PublishedResults() {
           {/* QR */}
           {showQR && (
             <div className="mt-8 flex justify-center">
-              <div className="bg-orange-50 border border-orange-100 rounded-3xl p-8 shadow-inner">
-                <QRCode value={resultLink} size={200} />
+              <div className="bg-white border-2 border-orange-200 rounded-3xl p-6 shadow-md text-center">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(resultLink)}`}
+                  alt="Poll Results QR Code"
+                  className="w-48 h-48 mx-auto rounded-2xl"
+                />
+                <p className="text-xs text-stone-500 font-medium mt-3">Scan to view results</p>
               </div>
             </div>
           )}
