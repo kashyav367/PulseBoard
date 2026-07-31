@@ -24,7 +24,7 @@ function CreatePoll() {
       description: "",
       expiresAt: null,
       responseMode: "both",
-      publishResults: true,
+      publishResults: false,
     })
 
   const [questions, setQuestions] =
@@ -565,14 +565,32 @@ function CreatePoll() {
 
                   minDate={new Date()}
 
-                  className="w-full border border-orange-200 rounded-2xl px-5 py-4 outline-none focus:ring-4 focus:ring-orange-100"
-
-                />
-
               </div>
 
-            </div>
+              {/* Publish Results Option */}
+              <div className="md:col-span-2 pt-6 border-t border-orange-100 flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <label className="font-bold text-stone-800 text-lg block">
+                    Automatically Publish Results
+                  </label>
+                  <p className="text-stone-500 text-sm mt-0.5">
+                    If turned off (default), poll will be created as Draft and results stay private until you click "Publish Results".
+                  </p>
+                </div>
 
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={pollData.publishResults}
+                    onChange={(e) =>
+                      setPollData({ ...pollData, publishResults: e.target.checked })
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-14 h-7 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-500"></div>
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Questions */}
