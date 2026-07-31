@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useParams } from "react"
+import { useParams } from "react-router-dom"
 import toast from "react-hot-toast"
 import Navbar from "../components/Navbar"
 import api from "../services/api"

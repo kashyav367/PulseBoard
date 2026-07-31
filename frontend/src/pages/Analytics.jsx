@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react"
+import { useParams } from "react-router-dom"
 import toast from "react-hot-toast"
 import api from "../services/api"
 import socket from "../services/socket"
