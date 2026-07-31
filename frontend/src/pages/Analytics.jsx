@@ -107,16 +107,20 @@ function Analytics() {
     if (!id) return
     fetchAnalytics()
 
-    socket.emit("join_poll", id)
+    if (socket) {
+      socket.emit("join_poll", id)
 
-    socket.on("vote_updated", () => {
-      fetchAnalytics()
-      toast("Vote updated live! ⚡", { icon: "📊" })
-    })
+      socket.on("vote_updated", () => {
+        fetchAnalytics()
+        toast("Vote updated live! ⚡", { icon: "📊" })
+      })
+    }
 
     return () => {
-      socket.emit("leave_poll", id)
-      socket.off("vote_updated")
+      if (socket) {
+        socket.emit("leave_poll", id)
+        socket.off("vote_updated")
+      }
     }
   }, [id])
 

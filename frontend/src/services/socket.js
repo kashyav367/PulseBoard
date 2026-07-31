@@ -1,17 +1,26 @@
 import { io } from "socket.io-client"
 
-const getSocketUrl = () => {
-  if (import.meta.env.VITE_SOCKET_URL) {
-    return import.meta.env.VITE_SOCKET_URL
+let socketInstance = null
+
+export const getSocket = () => {
+  if (!socketInstance && typeof window !== "undefined") {
+    try {
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || (
+        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+          ? "http://localhost:5000"
+          : "https://pulseboard-o4dg.onrender.com"
+      )
+
+      socketInstance = io(socketUrl, {
+        autoConnect: true,
+        transports: ["websocket", "polling"]
+      })
+    } catch (err) {
+      console.log("Socket connection error:", err)
+    }
   }
-  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:5000"
-    : "https://pulseboard-o4dg.onrender.com"
+  return socketInstance
 }
 
-const socket = io(getSocketUrl(), {
-  autoConnect: true,
-  transports: ["websocket", "polling"]
-})
-
+const socket = getSocket()
 export default socket
