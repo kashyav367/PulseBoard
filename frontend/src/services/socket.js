@@ -1,8 +1,15 @@
 import { io } from "socket.io-client"
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000"
+const getSocketUrl = () => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL
+  }
+  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5000"
+    : "https://pulseboard-o4dg.onrender.com"
+}
 
-const socket = io(SOCKET_URL, {
+const socket = io(getSocketUrl(), {
   autoConnect: true,
   transports: ["websocket", "polling"]
 })
