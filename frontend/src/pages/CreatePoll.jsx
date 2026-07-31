@@ -286,12 +286,14 @@ function CreatePoll() {
       )
 
       toast.success("Poll Created Successfully! 🚀", {
-        duration: 4000,
+        duration: 5000,
         style: {
           borderRadius: "16px",
-          background: "#333",
+          background: "#166534",
           color: "#fff",
-          fontWeight: "bold"
+          fontWeight: "bold",
+          fontSize: "16px",
+          padding: "16px"
         }
       })
 
@@ -311,7 +313,12 @@ function CreatePoll() {
         }
       ])
 
-      navigate("/dashboard")
+      navigate("/dashboard", {
+        state: {
+          created: true,
+          pollTitle: finalData.title
+        }
+      })
 
     } catch (error) {
 

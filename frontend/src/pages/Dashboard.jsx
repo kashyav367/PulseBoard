@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import api from "../services/api"
@@ -12,12 +12,15 @@ import {
   Vote,
   PlusCircle,
   Sparkles,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react"
 
 function Dashboard() {
+  const location = useLocation()
   const [polls, setPolls] = useState([])
   const [loading, setLoading] = useState(true)
+  const [createdBanner, setCreatedBanner] = useState(location.state?.created ? location.state : null)
 
   const fetchPolls = async () => {
     try {
@@ -33,6 +36,9 @@ function Dashboard() {
 
   useEffect(() => {
     fetchPolls()
+    if (location.state?.created) {
+      toast.success("Poll Created Successfully! 🚀", { duration: 5000 })
+    }
   }, [])
 
   const handlePollDeleted = (pollId) => {
@@ -61,6 +67,31 @@ function Dashboard() {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* SUCCESS BANNER */}
+        {createdBanner && (
+          <div className="bg-gradient-to-r from-emerald-600 to-green-600 border-2 border-stone-800 text-white rounded-[2rem] p-6 mb-8 shadow-[6px_6px_0px_#14532d] flex items-center justify-between flex-wrap gap-4 transition-all">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                <CheckCircle2 size={32} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight">Poll Created Successfully! 🚀</h2>
+                <p className="text-green-100 font-medium text-sm mt-0.5">
+                  "{createdBanner.pollTitle || "Your poll"}" is now live and ready to collect responses.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setCreatedBanner(null)}
+              className="bg-white text-green-800 hover:bg-green-50 px-5 py-2.5 rounded-xl font-bold transition text-xs shadow-md flex items-center gap-1.5"
+            >
+              <X size={16} />
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* HERO */}
         <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 to-amber-500 rounded-[2.8rem] px-6 md:px-10 py-10 md:py-12 text-white shadow-[10px_10px_0px_#7c2d12]">
           <div className="relative z-10">
