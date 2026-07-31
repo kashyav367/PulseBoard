@@ -4,7 +4,7 @@ import toast from "react-hot-toast"
 import api from "../services/api"
 import socket from "../services/socket"
 import Navbar from "../components/Navbar"
-import { Download, Loader2, Users, Shield, ShieldCheck } from "lucide-react"
+import { Download, Loader2, Users, Shield, ShieldCheck, PieChart as PieIcon, BarChart3 } from "lucide-react"
 
 import {
   PieChart,
@@ -31,27 +31,32 @@ function Analytics() {
 
   const fetchAnalytics = async () => {
     try {
+      setLoading(true)
       // First get poll details
       const pollRes = await api.get(`/polls/${id}`)
-      setPoll(pollRes.data.data)
+      const fetchedPoll = pollRes.data?.data || pollRes.data
+      setPoll(fetchedPoll)
 
       // Get dedicated analytics endpoint
       try {
         const analyticsRes = await api.get(`/analytics/${id}`)
-        if (analyticsRes.data?.data) {
-          setAnalyticsData(analyticsRes.data.data)
+        const data = analyticsRes.data?.data || analyticsRes.data
+        if (data) {
+          setAnalyticsData(data)
         }
       } catch (e) {
-        // Fallback to poll object
+        console.log("Analytics endpoint fallback:", e)
       }
     } catch (error) {
-      toast.error("Failed to load analytics data")
+      console.log("Error loading poll:", error)
+      toast.error(error.response?.data?.message || "Failed to load analytics data")
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
+    if (!id) return
     fetchAnalytics()
 
     socket.emit("join_poll", id)
@@ -72,19 +77,21 @@ function Analytics() {
 
     const questionsList = analyticsData?.analytics || poll.questions || []
     let csvContent = "data:text/csv;charset=utf-8,"
-    csvContent += `Poll Title,${poll.title}\n`
-    csvContent += `Created At,${poll.createdAt}\n`
+    csvContent += `Poll Title,${poll.title || ""}\n`
+    csvContent += `Created At,${poll.createdAt || ""}\n`
     csvContent += `Total Responses,${analyticsData?.totalResponses || 0}\n\n`
     csvContent += "Question Number,Question Text,Option Text,Votes Count,Percentage\n"
 
     questionsList.forEach((q, qIndex) => {
-      const qText = q.questionText || q.question || ""
-      const qTotalVotes = q.totalVotes || q.options?.reduce((sum, opt) => sum + (opt.votes || 0), 0) || 0
+      const qText = q.questionText || q.question || `Question ${qIndex + 1}`
+      const qTotalVotes = q.totalVotes || q.options?.reduce((sum, opt) => sum + (Number(opt.votes) || 0), 0) || 0
 
       q.options?.forEach((opt) => {
-        const votes = opt.votes || 0
-        const percentage = opt.percentage !== undefined ? opt.percentage : (qTotalVotes > 0 ? ((votes / qTotalVotes) * 100).toFixed(1) : "0.0")
-        csvContent += `"${qIndex + 1}","${qText.replace(/"/g, '""')}","${opt.text.replace(/"/g, '""')}",${votes},${percentage}%\n`
+        const votes = Number(opt.votes) || 0
+        const percentage = opt.percentage !== undefined
+          ? opt.percentage
+          : (qTotalVotes > 0 ? ((votes / qTotalVotes) * 100).toFixed(1) : "0.0")
+        csvContent += `"${qIndex + 1}","${String(qText).replace(/"/g, '""')}","${String(opt.text || "").replace(/"/g, '""')}",${votes},${percentage}%\n`
       })
     })
 
@@ -114,21 +121,30 @@ function Analytics() {
   if (!poll) {
     return (
       <div className="min-h-screen bg-[#fff8f1] flex items-center justify-center">
-        <h1 className="text-3xl font-black text-red-500">
-          Poll not found 😢
-        </h1>
+        <div className="text-center p-8 bg-white border-2 border-stone-800 rounded-3xl shadow-lg max-w-md">
+          <h1 className="text-3xl font-black text-red-500 mb-3">
+            Poll not found 😢
+          </h1>
+          <p className="text-stone-600 mb-6">The requested poll analytics could not be loaded or does not exist.</p>
+          <a href="/dashboard" className="inline-block bg-orange-500 text-white font-bold px-6 py-3 rounded-2xl hover:bg-orange-600 transition">
+            Back to Dashboard
+          </a>
+        </div>
       </div>
     )
   }
 
-  // Determine questions list from analytics endpoint if available
-  const displayQuestions = analyticsData?.analytics?.length > 0
+  // Determine questions list cleanly
+  const displayQuestions = (analyticsData?.analytics && analyticsData.analytics.length > 0)
     ? analyticsData.analytics
-    : poll.questions?.map((q) => ({
+    : (poll.questions?.map((q) => ({
         questionText: q.question,
-        options: q.options,
-        totalVotes: q.options?.reduce((acc, opt) => acc + (opt.votes || 0), 0)
-      })) || []
+        options: q.options?.map(opt => ({
+          text: opt.text,
+          votes: Number(opt.votes) || 0
+        })),
+        totalVotes: q.options?.reduce((acc, opt) => acc + (Number(opt.votes) || 0), 0) || 0
+      })) || [])
 
   return (
     <div className="min-h-screen bg-[#fff8f1]">
@@ -153,7 +169,7 @@ function Analytics() {
               </div>
 
               <p className="text-2xl opacity-90 font-medium">
-                {poll.title}
+                {poll.title || "Untitled Poll"}
               </p>
             </div>
 
@@ -204,139 +220,161 @@ function Analytics() {
         </div>
 
         {/* QUESTIONS */}
-        {displayQuestions.map((question, index) => {
-          const qTotalVotes = question.totalVotes || question.options?.reduce((acc, option) => acc + Number(option.votes || 0), 0) || 0
-          const maxVotes = Math.max(...(question.options?.map((o) => Number(o.votes || 0)) || [0]))
-          const questionText = question.questionText || question.question || `Question ${index + 1}`
+        {displayQuestions.length === 0 ? (
+          <div className="bg-white border-2 border-stone-800 rounded-[32px] p-10 text-center shadow-[8px_8px_0px_#fdba74]">
+            <BarChart3 className="w-16 h-16 text-orange-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-stone-800 mb-2">No Questions Found</h2>
+            <p className="text-stone-500">This poll does not contain any questions to display analytics for.</p>
+          </div>
+        ) : (
+          displayQuestions.map((question, index) => {
+            const options = question.options || []
+            const qTotalVotes = question.totalVotes || options.reduce((acc, option) => acc + Number(option.votes || 0), 0)
+            const maxVotes = Math.max(...(options.map((o) => Number(o.votes || 0)) || [0]))
+            const questionText = question.questionText || question.question || `Question ${index + 1}`
 
-          return (
-            <div
-              key={index}
-              className="bg-white border-2 border-stone-800 rounded-[32px] p-8 mb-10 shadow-[8px_8px_0px_#fdba74] hover:translate-y-[-3px] transition-all duration-300"
-            >
-              {/* HEADER */}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 mb-10">
-                <div>
-                  <h2 className="text-3xl font-black text-stone-800 mb-2">
-                    Q{index + 1}. {questionText}
-                  </h2>
+            // Format chart data safely
+            const chartData = options.map((opt) => ({
+              text: String(opt.text || "Option"),
+              votes: Number(opt.votes) || 0
+            }))
 
-                  {qTotalVotes === 0 && (
-                    <p className="text-orange-500 font-semibold">
-                      No responses recorded yet 🚀
-                    </p>
-                  )}
+            return (
+              <div
+                key={index}
+                className="bg-white border-2 border-stone-800 rounded-[32px] p-8 mb-10 shadow-[8px_8px_0px_#fdba74] hover:translate-y-[-3px] transition-all duration-300"
+              >
+                {/* HEADER */}
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 mb-10">
+                  <div>
+                    <h2 className="text-3xl font-black text-stone-800 mb-2">
+                      Q{index + 1}. {questionText}
+                    </h2>
+
+                    {qTotalVotes === 0 && (
+                      <p className="text-orange-500 font-semibold">
+                        No responses recorded yet 🚀
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-orange-100 text-orange-700 px-5 py-3 rounded-full font-black text-lg">
+                    {qTotalVotes} {qTotalVotes === 1 ? "Vote" : "Votes"}
+                  </div>
                 </div>
 
-                <div className="bg-orange-100 text-orange-700 px-5 py-3 rounded-full font-black text-lg">
-                  {qTotalVotes} Votes
-                </div>
-              </div>
-
-              {/* GRID */}
-              <div className="grid lg:grid-cols-2 gap-10 items-center">
-                {/* PIE CHART */}
-                <div className="w-full h-[320px] bg-orange-50/50 rounded-3xl p-4 border border-orange-100 flex items-center justify-center">
-                  {qTotalVotes > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={question.options}
-                          dataKey="votes"
-                          nameKey="text"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={100}
-                          innerRadius={55}
-                          paddingAngle={4}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                        >
-                          {question.options?.map((_, i) => (
-                            <Cell
-                              key={i}
-                              fill={COLORS[i % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value, name) => [`${value} votes`, name]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-stone-400 font-semibold text-center">
-                      Chart will appear once votes are cast 📈
-                    </p>
-                  )}
-                </div>
-
-                {/* OPTIONS */}
-                <div className="space-y-5">
-                  {question.options?.map((option, i) => {
-                    const votes = Number(option.votes || 0)
-                    const percentage = option.percentage !== undefined
-                      ? option.percentage
-                      : (qTotalVotes > 0 ? (votes / qTotalVotes) * 100 : 0)
-                    const isWinner = votes === maxVotes && votes > 0
-
-                    return (
-                      <div
-                        key={i}
-                        className={`rounded-2xl p-5 border-2 transition-all duration-300 ${
-                          isWinner
-                            ? "border-orange-500 bg-orange-50/80 shadow-sm"
-                            : "border-orange-100 hover:border-orange-200"
-                        }`}
-                      >
-                        {/* TOP */}
-                        <div className="flex justify-between items-center mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-lg text-stone-800">
-                              {option.text}
-                            </span>
-
-                            {isWinner && (
-                              <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-sm">
-                                👑 Leading
-                              </span>
-                            )}
-                          </div>
-
-                          <span className="font-black text-orange-600 text-lg">
-                            {votes} {votes === 1 ? "vote" : "votes"}
-                          </span>
-                        </div>
-
-                        {/* BAR */}
-                        <div className="relative w-full bg-orange-100/80 rounded-full h-5 overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-orange-500 to-amber-500 h-5 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3"
-                            style={{
-                              width: `${Math.max(percentage, votes > 0 ? 5 : 0)}%`
+                {/* GRID */}
+                <div className="grid lg:grid-cols-2 gap-10 items-center">
+                  {/* PIE CHART */}
+                  <div className="w-full h-[320px] bg-orange-50/50 rounded-3xl p-4 border border-orange-100 flex items-center justify-center min-h-[300px]">
+                    {qTotalVotes > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            dataKey="votes"
+                            nameKey="text"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={95}
+                            innerRadius={50}
+                            paddingAngle={4}
+                            label={({ name, percent }) => {
+                              const pctVal = (typeof percent === "number" && !isNaN(percent)) ? (percent * 100).toFixed(0) : "0"
+                              return `${name || "Option"} (${pctVal}%)`
                             }}
                           >
-                            {percentage > 12 && (
-                              <span className="text-white text-xs font-bold">
-                                {percentage.toFixed(0)}%
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* PERCENT */}
-                        <p className="text-right text-xs mt-2 text-stone-500 font-bold">
-                          {percentage.toFixed(1)}%
+                            {chartData.map((_, i) => (
+                              <Cell
+                                key={i}
+                                fill={COLORS[i % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value, name) => [`${value} votes`, name]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="text-center p-6">
+                        <PieIcon className="w-12 h-12 text-orange-300 mx-auto mb-2 opacity-60" />
+                        <p className="text-stone-500 font-semibold text-sm">
+                          Chart will appear once votes are cast 📈
                         </p>
                       </div>
-                    )
-                  })}
+                    )}
+                  </div>
+
+                  {/* OPTIONS */}
+                  <div className="space-y-5">
+                    {options.map((option, i) => {
+                      const votes = Number(option.votes || 0)
+                      const percentage = option.percentage !== undefined
+                        ? Number(option.percentage)
+                        : (qTotalVotes > 0 ? (votes / qTotalVotes) * 100 : 0)
+                      const isWinner = votes === maxVotes && votes > 0
+
+                      return (
+                        <div
+                          key={i}
+                          className={`rounded-2xl p-5 border-2 transition-all duration-300 ${
+                            isWinner
+                              ? "border-orange-500 bg-orange-50/80 shadow-sm"
+                              : "border-orange-100 hover:border-orange-200"
+                          }`}
+                        >
+                          {/* TOP */}
+                          <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-lg text-stone-800">
+                                {option.text}
+                              </span>
+
+                              {isWinner && (
+                                <span className="bg-orange-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-sm">
+                                  👑 Leading
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="font-black text-orange-600 text-lg">
+                              {votes} {votes === 1 ? "vote" : "votes"}
+                            </span>
+                          </div>
+
+                          {/* BAR */}
+                          <div className="relative w-full bg-orange-100/80 rounded-full h-5 overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-orange-500 to-amber-500 h-5 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3"
+                              style={{
+                                width: `${Math.max(percentage, votes > 0 ? 5 : 0)}%`
+                              }}
+                            >
+                              {percentage > 12 && (
+                                <span className="text-white text-xs font-bold">
+                                  {percentage.toFixed(0)}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* PERCENT */}
+                          <p className="text-right text-xs mt-2 text-stone-500 font-bold">
+                            {percentage.toFixed(1)}%
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
     </div>
   )
 }
 
 export default Analytics
+
 
