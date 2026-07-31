@@ -4,7 +4,7 @@ import toast from "react-hot-toast"
 import api from "../services/api"
 import socket from "../services/socket"
 import Navbar from "../components/Navbar"
-import { Download, Loader2, Users, Shield, ShieldCheck, PieChart as PieIcon, BarChart3 } from "lucide-react"
+import { Download, Loader2, Users, Shield, ShieldCheck, BarChart3 } from "lucide-react"
 
 // Pure SVG Bulletproof Donut Chart
 function CustomDonutChart({ data, totalVotes, colors }) {
@@ -321,7 +321,7 @@ function Analytics() {
                       <CustomDonutChart data={chartData} totalVotes={qTotalVotes} colors={COLORS} />
                     ) : (
                       <div className="text-center p-6">
-                        <PieIcon className="w-12 h-12 text-orange-300 mx-auto mb-2 opacity-60" />
+                        <BarChart3 className="w-12 h-12 text-orange-300 mx-auto mb-2 opacity-60" />
                         <p className="text-stone-500 font-semibold text-sm">
                           Chart will appear once votes are cast 📈
                         </p>

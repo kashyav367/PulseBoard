@@ -8,7 +8,6 @@ import {
   Globe,
   Copy,
   Share2,
-  QrCode,
   CheckCircle2,
   Loader2
 } from "lucide-react"
@@ -138,7 +137,7 @@ function PublishedResults() {
                 onClick={() => setShowQR(!showQR)}
                 className="border border-orange-200 text-orange-600 hover:bg-orange-50 px-6 py-4 rounded-2xl font-semibold transition flex items-center gap-2"
               >
-                <QrCode size={18} />
+                <Share2 size={18} />
                 {showQR ? "Hide QR" : "Show QR"}
               </button>
             </div>
