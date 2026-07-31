@@ -23,7 +23,7 @@ passport.use(
         process.env.GOOGLE_CLIENT_SECRET,
 
       callbackURL:
-        "https://pulseboard-o4dg.onrender.com/api/auth/google/callback",
+        `${process.env.BACKEND_URL || "https://pulseboard-o4dg.onrender.com"}/api/auth/google/callback`,
     },
 
     async (
