@@ -158,11 +158,6 @@ function CreatePoll() {
   }
 
   // Submit
-
-  const handleSubmit = async (e) => {
-
-    e.preventDefault()
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
