@@ -217,6 +217,3 @@ This project is licensed under the MIT License — feel free to use, modify, and
 ## 👨‍💻 Author
 
 **Ankit Kumar Singh**
-
-- GitHub: https://github.com/kashyav367
-- LinkedIn: https://linkedin.com/in/me-ankit-singh
